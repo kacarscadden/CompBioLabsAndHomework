@@ -1,0 +1,29 @@
+General commands that have been helpful in learning terminal
+
+cd	changes working directory. 
+	Can be used with path names, - (goes to previous wd), 
+	and ..(goes to parent directory)
+
+ls	lists contents of a directory.
+	Used with -a flag, shows even hidden files/directories, like .git
+
+mkdir	creates a directory.
+
+
+
+Commands useful for working with git in the terminal
+
+git init	to start using git
+
+git status	to see what git’s doing, which files it’s tracking or waiting to commit.
+		Must be in the parent directory to where .git (the repo) is
+
+git add [filename] and then git commit -m	this sequence stages a file and
+						then commits it (takes a snapshot
+						in time and adds the doc changes as
+						a layer in the git repository)
+						-m lets you add a message about changes
+
+git log		displays each commit you’ve done and its commit message
+
+git diff	displays the edits made & saved since the last add/commit cycle		
