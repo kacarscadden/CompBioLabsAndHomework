@@ -156,7 +156,7 @@ for(i in 2:ncol(dat)) {
   
 } #end of variables loop
 
-write.csv(CO2percentChange, "YearlyPercentChangesInCO2.csv")  
+write.csv(CO2percentChange, "YearlyPercentChangesInCO2.csv", row.names=F)  
 
 
 #BONUS: For each year, calculate percent change from 1st year with non-zero data, write output
@@ -191,4 +191,4 @@ for(i in 2:ncol(dat)) {
   
 } #end of variables loop
 
-write.csv(CO2percentChange2, "YearlyPercentChangesInCO2_Bonus.csv")    
+write.csv(CO2percentChange2, "YearlyPercentChangesInCO2_Bonus.csv", row.names=F)    
