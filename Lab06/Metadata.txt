@@ -1,0 +1,37 @@
+SPECIES DESCRIPTIONS AND HABITAT DATA SOURCES:
+
+1. Jepson eflora (http://ucjeps.berkeley.edu/eflora)
+	- citation: (e.g., for each species treatment) David M. Thompson 2017. Mimulus kelloggii, in Jepson Flora Project (eds.) Jepson eFlora, http://ucjeps.berkeley.edu/cgi-bin/get_IJM.pl?tid=33662, accessed on February 27, 2017.
+	(for the whole project) Jepson Flora Project (eds.) 2017. Jepson eFlora, http://ucjeps.berkeley.edu/IJM.html, accessed on February 27, 2017.
+	
+	- data available: species description (habit, leaf, flower, fruit, chromosomes), habitat (ecology, elevation), flowering time
+	
+	- data format: paragraph format. Headers followed by ':', information within each header separated by ',' or ';', and each section ends with '.'
+	(e.g., Habit: Annual 1--31 cm, hairy.)
+	
+	
+2. Calflora (www.calflora.org)
+	- citation: Calflora: Information on California plants for education, research and conservation, 
+	with data contributed by public and private institutions and individuals, including the Consortium of California Herbaria. 
+	[web application]. 2017. Berkeley, California: The Calflora Database [a non-profit organization]. 
+	Available: http://www.calflora.org/   (Accessed: Feb 27, 2017).
+
+	- data available: communities (e.g., chaparral), wetlands affinity (descriptive), serpentine affinity (numeric and descriptive)
+	
+	- data format: separate headers on separate lines, followed by ':'. Descriptors separated by ',' 
+	(e.g., Communities: Chaparral, Foothill Woodland)
+
+
+Restrictions on use: Jepson data cannot be redistributed, repackaged, sold
+
+
+
+SPECIES LIST SOURCE FOR PHYLOGENY:
+1. Plant list from plant-pollinator network dataset
+	- citation: Vizentin-Bugoni, J., P. K. Maruyama, V. J. Debastiani, L. S. Duarte, B. Dalsgaard & M. Sazima (2016). Influences of sampling effort on detected patterns and structuring processes of a Neotropical plant-hummingbird network. Journal of Animal Ecology 85: 262-272.
+	(Data accessed from www.nceas.ucsb.edu/interactionweb)
+	
+	- data format: csv containing genus, species, author for 55 species. Some species are not resolved (e.g., Justicia sp. 1 and 2)
+	
+
+

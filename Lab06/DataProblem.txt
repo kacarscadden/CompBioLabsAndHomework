@@ -1,0 +1,31 @@
+DATA FILTERING / VALIDATION / ACQUISITION PROBLEM:
+
+I would like to learn how to use code to scrape data from websites and then check and filter that data.
+I also want to understand when that's likely to be the best approach (i.e., at what volume of data does code writing become worthwhile, what restrictions are there in terms of website layout & data accessibility, etc)
+
+
+PROBLEM 1: COLLECTING SPECIES DESCRIPTIONS AND TRAITS
+
+Challenge: Using code to aggregating information (from websites or papers) is a skill I hope to apply in many different ways. 
+For illustration, I want to collect trait, habitat, and phenology information on Mimulus species and devise validation checks.
+I will then need to parse the information to make it usable (e.g., filter, so numeric information is separated from descriptors)
+
+Data: This data is available from two websites, detailed in the Metadata.txt file.
+
+Anticipated approach: Perhaps use {XML} or {RSelenium} R packages. I could validate the data collected, in part, by checking the class of each variable (i.e., ensuring I'd removed any accompanying text from numeric information).
+There are fixed headers I'm searching for in the text (e.g., "Habit"), so I could target them & specify the appropriate output using if statements.
+I could separate descriptors (multiple terms under a single header) using regular expression matching.
+
+
+
+
+PROBLEM 2: SEARCHING FOR SEQUENCE DATA FOR A SPECIES LIST
+
+Challenge: I want to see if there is appropriate sequence data that would allow me to build a phylogeny of a species list. Then, I want to download the relevant data and store it in a convenient manner. 
+
+Data: Genbank (https://www.ncbi.nlm.nih.gov/nuccore/) hosts any available sequences.
+	The species list is the plant portion of a plant-pollinator network described in Metadata.txt
+	 
+Anticipated approach: This involves cleaning species names in the species list (eliminating the author, using string split in R), writing code to query Genbank, searching for congeneric species where the focal species lacks sequence data, downloading data, and tallying which gene sequences were available for which species.
+Data validation might involve writing code to check sequence lengths, to start (to ensure full sequences are being used).
+If sequence data is not available even at the genus level, I would then need to filter the network data to eliminate those species.
