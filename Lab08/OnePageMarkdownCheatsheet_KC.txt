@@ -1,0 +1,88 @@
+One-page markdown cheatsheet, intentionally written in a plain text file:
+
+# Heading 1
+## Heading 2
+### Heading 3
+#### Heading 4
+##### Heading 5
+###### Heading 6
+
+KC note - making things headings - GitHub will automatically create a hyperlink to anything you made a heading -> allows you to easily reference parts of the document in future work
+
+Bulleted list:
+* item 1
+* item 2
+* item 3
+
+Numbered list:
+1. item 1
+2. item 2
+
+Inline code:
+Here is some code: `x <- 5`
+
+Inline links:
+[text to display for link](URLgoeshere)
+
+
+####KC notes from tutorial
+
+_italics_
+*italics*
+
+**bold**
+
+
+Inline links with bolded text:
+[**Search** for it.](www.google.com)
+
+
+Reference links (to another place in the document, where links are defined):
+(Allows you to define web links once but reference them repeatedly)
+
+Do you want to [see something fun][a fun place]?
+
+Well, do I have [the website for you][another fun place]!
+
+[a fun place]: www.zombo.com
+[another fun place]: www.stumbleupon.com
+
+
+Image links:
+![A representation of Octdrey Catburn](http://octodex.github.com/images/octdrey-catburn.jpg)
+
+
+Reference image (works the same as reference links):
+![The first father][First Father]
+
+![The second first father][Second Father]
+
+[First Father]: http://octodex.github.com/images/founding-father.jpg
+
+[Second Father]:http://octodex.github.com/images/foundingfather_v2.png 
+
+
+Block quotes (to draw attention to a paragraph or line):
+>
+
+Place a carat on each line, including the spaces, to block quote larger passages
+
+
+Indented lists:
+* item 1
+ * sub-item 1
+* item 2
+ * sub-item 2.1
+ * sub-item 2.2
+
+
+Paragraphs:
+Soft breaks by inserting 2 spaces after each new line (below, .. represent spaces)
+Do I contradict myself?··
+Very well then I contradict myself,··
+
+Also useful for making lists.
+
+
+
+

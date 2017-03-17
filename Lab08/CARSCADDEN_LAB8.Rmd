@@ -1,0 +1,105 @@
+---
+title: "Lab 08 Markdown Practice"
+author: "Kelly Carscadden"
+date: '2017-03-10'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Problem 2 from Lab 07: Logistic growth model
+
+####Write a function of the logistic growth model (with default arguments) that plots and returns the results.
+
+```{r localSetup}
+setwd("/Users/kellycarscadden/Documents/EBIOcourses/CompBioLabsAndHomework/Lab08/")
+```
+
+####Key to parameters
+start = initial population size (aka, n[1])  
+timeSteps = total number generations  
+r = intrinsic population growth rt  
+K = carrying capacity
+
+```{r logisticGrowth}
+#Create function with default values
+logGrowthFunc <- function(start = 10, timeSteps = 100, r = 0.8, K = 1000) {
+  
+  n <- c(start, rep(NA, timeSteps-1)) #pre-allocate, and load in starting population size
+  
+  for(t in 2:timeSteps) {
+    n[t] <- n[t-1] + (r * n[t-1] * (K - n[t-1]) / K) #Calculate logistic growth
+  }#end for loop
+  
+  #create data frame with time and abund
+  abundDat <- data.frame("generations" = 1:timeSteps, "abundance" = n)
+
+  #plot the data
+  plot(abundDat$generations, abundDat$abundance, type = "l", col = "blue",
+       xlab = "Generation", ylab = "Abundance", main = "Logistic population growth")
+  
+  #create a source-able file of the parameter values used 
+  sink("Parameters.R")
+  cat(paste("#Parameters used in discrete-time logistic growth model model run on ",
+            date(),"\n"))
+  cat("#Initial abundance \n")
+  cat(paste("start <- ", start, "\n", sep=""))
+  
+  cat("#Total generations \n")
+  cat(paste("timeSteps <- ", timeSteps, "\n", sep=""))
+  
+  cat("#Intrinsic population growth rate \n")
+  cat(paste("r <- ", r, "\n", sep=""))
+  
+  cat("#Carrying capacity \n")
+  cat(paste("K <- ", K, "\n", sep=""))
+  sink()
+  
+  #output the data and exit the function
+  return(abundDat) 
+  
+}#end function
+
+#Call the function, save abundance data, and produce a plot
+logGrowthResults <- logGrowthFunc()
+```
+
+####Safe write the results, preventing accidental overwriting
+
+Attribution for mySafeWriteCSV function: Samuel Flaxman
+
+To run and create a .csv file, remove 'eval=F' from line 58 in .Rmd.
+Change the file name as desired when you call mySafeWriteCSV.
+```{r dataExport, eval=F}
+mySafeWriteCSV <- function(data = NULL, namebase = NULL, writeRowNames = F) {
+  if(is.null(namebase)) { #check if a file name was provided
+    warning("Error - no file name given!\n")
+  } else if (is.null(data)) { #check if data were provided
+      warning("Error - no data given!\n")
+  } else {
+    #remove file extension if present
+    namebase <- strsplit(namebase, "\\.")[[1]][1]
+    
+    #create a first name to try with extension
+    filename <- paste(namebase, ".csv", sep="")
+    
+    #create a variable to make new names in a logical sequence
+    counter <- 1
+    
+    #use a while loop to find an unused name
+    while(file.exists(filename)) {
+      filename <- paste(namebase, counter, ".csv", sep="")
+      counter <- counter + 1
+    }#end of while
+    
+    cat(paste("Writing file to '", filename, "'\n", sep=""))
+    
+    #write the data to a file
+    write.csv(data, filename, row.names = writeRowNames)
+    }#end of if-else
+}#end of function
+
+mySafeWriteCSV(logGrowthResults, "Carscadden_Lab8_LogisticGrowthData")
+```
