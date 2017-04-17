@@ -29,9 +29,9 @@ From the interaction frequencies, they created 50 bipartite plant-hummingbird in
 	 * bill length (9 bird sp x 6 columns:  sp acronym, mean bill length, sd(bill length), number of samples, tongue extension (cm), bill and tongue (cm))  
 
 * Anticipated challenges  
-		* Inherent in provided data  
+	 * Inherent in provided data  
 Phenology files have text above the header; column names include spaces, parentheses, plus signs;  month names are not linked to years in phenology data (so month labels are not unique); species names contain author names in different formats (so so parsing is not straightforward); some plant species names are not precise (e.g., to genus level or listed as 'cf' a similar species)  
-		* Given my planned analyses (described below)  
+	 * Given my planned analyses (described below)  
 Finding sequence data for plants not identified to species; finding an appropriate gene (e.g., MatK) for which data will be consistently available across all focal plant species.
 
 
