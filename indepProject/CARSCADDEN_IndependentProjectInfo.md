@@ -3,10 +3,10 @@
 Kelly Carscadden 2017
 
 ## Central question:
-How do different estimates of species' interaction niche breadth (the number or diversity of 'resource' species with which they interact) compare? Does considering the phylogenetic diversity of the 'resource' species change how wide a focal species' NB is considered to be? 
+How do different estimates of species' interaction niche breadth (the number or diversity of 'resource' species with which they interact) compare? Does considering the phylogenetic diversity of the 'resource' species change how wide a focal species' niche breadth is considered to be? 
 
 ## Context:
-Niche breadth is some measure of the range or diversity of resources a species uses or conditions it tolerates. Niche breadth is involved in numerous aspects of species' ecology and evolution including community assembly, species' vulnerability, and diversification, and because niche breadth is invoked across a wide body of literature, there are numerous ways of measuring a species' niche breadth. It remains unknown how many of these measures compare (particularly the more complex ones, which I aim to tackle next).
+Niche breadth is some measure of the range or diversity of resources a species uses or conditions it tolerates. Niche breadth is involved in numerous aspects of species' ecology and evolution including community assembly, species' vulnerability, and diversification, and because niche breadth is invoked across a wide body of literature, there are numerous ways of measuring a species' niche breadth. It remains unknown how many of these measures compare (particularly the more complex ones, which I aim to tackle in the future).
 
 ## Methods:
 ### Niche breadth estimators
@@ -21,7 +21,7 @@ Richness is the count of the number of 'resource' species with which a focal spe
 In the future, I aim to expand my comparisons to a broader swath of niche breadth metrics, encompassing a greater diversity of the literature that draws upon the niche breadth concept.
 
 ### My approach
-Comparing niche breadth estimators requires numerous types of data (particularly since I hope to expand the number of metrics compared, in the future). I began by finding a species interaction network dataset that recorded the frequency of interactions. From the list of resource species, I wrote an R script to search [GenBank](https://www.ncbi.nlm.nih.gov/nuccore) for sequence data, parse and align the sequences, and construct a phylogenetic tree for the resource species that had sequence data. 
+Comparing niche breadth estimators requires numerous types of data. I began by finding a species interaction network dataset that recorded the frequency of interactions. From the list of resource species, I wrote an R script to search [GenBank](https://www.ncbi.nlm.nih.gov/nuccore) for sequence data, parse and align the sequences, and construct a phylogenetic tree for the resource species that had sequence data. 
 
 After constructing the tree, I pared down the interaction network to eliminate any plant species I could not include in the tree (for lack of sequence data). I then calculated the phylogenetic diversity of resource species used by each focal species in the network. I compared this measure to calculated richness and Simpson's diversity using Spearman's rank correlation and visualized the relationship using scatterplots.
 
@@ -50,7 +50,7 @@ Format, type, size: csv sheets (62 kb total). NOTE, data is not provided by time
 NOTE - my analyses rely upon 2 of these data sheets: the plant abundance data sheet (where complete plant names are provided) and the interaction network. In future analyses, I aim to incorporate the other data provided (traits, background availability of resource species) to compare other types of niche breadth measures. 
 
 #### Anticipated challenges  
-I anticipated parsing and subsetting would be major components of this assignment. Plant species names contain author names in different formats, sequence data is often provided with multiple gene sequences under the same accession number, and had to remove plant species from the interaction network if I could not find corresponding sequence data. I invested time learning how to web scrape and use existing functions to interact with GenBank's API that makes sequence data available. Sequence data is returned in lists, so much of the challenge was also learning how to deal with list format data. 
+I anticipated parsing and subsetting would be major components of this assignment. Plant species names contain author names in different formats, sequence data is often provided with multiple gene sequences under the same accession number, and I had to remove plant species from the interaction network if I could not find corresponding sequence data. I invested time learning how to web scrape and use existing functions to interact with GenBank's API that makes sequence data available. Sequence data is returned in lists, so much of the challenge was also learning how to deal with list format data. 
 
 
 ## Results and conclusions from my analyses
