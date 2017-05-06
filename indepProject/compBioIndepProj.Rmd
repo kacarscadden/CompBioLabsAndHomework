@@ -1,0 +1,414 @@
+---
+title: "Interaction Niche Breadth in Hummingbirds"
+author: "Kelly Carscadden"
+date: '2017-04-21'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Aims: Using focal species from Vizentin-Bugoni et al. 2016, collect plant sequence data, build a tree, and compare different estimates of hummingbird interaction niche breadth
+
+# Get plant sequence data and build a phylogenetic tree
+
+Install and load necessary packages.
+
+Note - you will need an internet connection to download packages and for using packages to interact with NCBI's genbank website.
+```{r installLib}
+#get package names
+#some packages best installed via bioconductor. Source bioconductor & use 'biocLite()' to install these
+source("http://www.bioconductor.org/biocLite.R")
+bioconPackages <- c("msa", "Biostrings", "DECIPHER")
+otherPackages <- c("rentrez", "AnnotationBustR", "phangorn", "ape", "picante", "vegan", "Hmisc")
+
+#see which packages are not already installed, and install if missing
+bioconMissing <- bioconPackages[!bioconPackages %in% installed.packages()]
+if(length(bioconMissing)) biocLite(bioconMissing)
+
+otherMissing <- otherPackages[!otherPackages %in% installed.packages()]
+if(length(otherMissing)) install.packages(otherMissing, dependencies = TRUE)
+
+#load packages
+library(msa) #for displaying sequence alignments
+library(Biostrings) #to read in fasta file of raw sequence data
+library(DECIPHER) #to align sequences
+library(rentrez) #to interface with NCBI's API (entrez)
+library(AnnotationBustR) #to search genbank and extract particular sequences from genomic data or sequences containing multiple genes
+library(phangorn) #to estimate tree likelihood
+library(ape) #for building and manipulating tree
+library(picante) #for calculating phylogenetic diversity
+library(vegan) #for calculating Simpson's diversity
+library(Hmisc) #for correlation test on a matrix
+
+#Note - you must also have TEX or LATEX installed to see the output of msaPrettyPrint (sequence alignment pdf created)
+```
+
+
+Read in all of the data files from Vizentin-Bugoni et al. 2016.
+```{r prep}
+#Set your working directory by modifying the code below
+#Make sure the data files are all in this directory AND that they are the ONLY .csv files there
+#setwd("/Users/kellycarscadden/Documents/EBIOcourses/compBio/indepProj_VizentinBugoni2016")
+
+#make a list of all 7 .csv data files
+temp <- list.files(pattern = "*.csv")
+
+#read them in as separate data frames, removing .csv from the filename 
+#($ indicates the end of a string). 
+list2env(
+  lapply(setNames(temp, make.names(gsub("*.csv$", "", temp))), 
+         read.csv), envir = .GlobalEnv)
+```
+
+Clean up plant species names by removing authors. For my purposes, change any 'cf' (comparisons to a taxon) to be labelled as that taxon definitively.
+```{r spCleanup}
+#peek at the Species data
+head(plantNamesAbund)
+
+#first, remove 'cf'
+plantNamesAbund$Species <- sub("cf. |cf", "", plantNamesAbund$Species)
+
+#now, any words after the 1st 2 are author-related
+#split plant names on the spaces, using vectorized programming of strsplit
+splitNames <- strsplit(as.character(plantNamesAbund$Species), " ")
+
+#define a function to retain the 1st 2 names, which form the plant scientific name, for a given element of the splitNames list
+#include an underscore in the sp name from the start (later rentrez search functions don't care if there's an underscore or not when searching genBank, and it makes it easier to recycle these sp names for object labels)
+namePaste <- function(myobj){  
+  return(paste(myobj[1],myobj[2], sep="_"))
+}
+
+#apply this over the list of split names and store it as a character vector
+#as a new part of the original data frame
+plantNamesAbund$GenusSp <- unlist(lapply(splitNames, FUN=namePaste))
+```
+
+With the cleaned species list, search Genbank for sequence data, using code to search the NCBI website.
+
+Sequence of interest: matK, a chloroplast gene.
+
+Use {rentrez} package to check which species have matK sequence data on genbank and get the NCBI ids for these species (this code chunk).
+
+NOTE: the current search does not differentiate species from their variants. FUTURE DIRECTION: refine by string parsing the labels of the fasta file or species' info associated with NCBI ids to kick out variants as necessary.
+
+```{r subSpIDs}
+#first, complete the plant species list: add 2 outgroup species to root the tree we'll make later (Amborella trichopoda, Magnolia grandiflora)
+
+spNames <- c(plantNamesAbund$GenusSp, "Amborella_trichopoda", "Magnolia_grandiflora")
+
+#make a vector of search terms, including each plant sp (organism, ORGN) name and the target gene sequence
+searchTerms <- paste0(spNames, "[ORGN] AND MatK[GENE]")
+
+#conduct an NCBI search to see which records are available, across all focal plant sp
+searchReturn <- lapply(searchTerms, FUN=function(x){
+  entrez_search(db="nuccore",term=x, retmax=999)
+})
+#several have no MatK sequence data available
+#these are entrez search results - they don't display the data contained without further calls
+
+#subset the species names by those I know have sequence data (matK)
+#pull NCBI ids for each species' sequence data (I will also need these later to find accession numbers & then actual sequence data)
+matK_seqIDs <- lapply(searchReturn, FUN=function(x){
+  x$ids
+})
+
+#remove species that lack sequence data (have no sequence ids)
+#first, determine & flag which list elements have no sequence ids
+ matK_spToOmit <- lapply(matK_seqIDs, FUN=function(x){
+  ifelse(length(x)>0, x, "omit")
+ })   
+   
+#pre-allocate max # sp to keep   
+spToKeep <- rep(NA, length(spNames))
+k<-0 #set up a counter
+
+#create a vector of indices that match with the species for which matK data is available
+for(i in 1:length(spNames)){  
+  k<-k+1
+ if(matK_spToOmit[[i]]!="omit") {
+   spToKeep[k] <-i
+ }#end of if
+}#end of for loop
+
+#remove NAs from this vector
+spToKeep <- spToKeep[!is.na(spToKeep)]
+
+#subset the vector of sequence ids by the vector of species indices to keep
+#end result = a vector of sequence ids of sp that have matK sequence data
+matK_seqIDs_toKeep <- matK_seqIDs[spToKeep] #29 sp remain (/55 focal + 2 outgroup, initially)
+```
+
+The 'fetch' option in {rentrez} gets sequence data but does not extract matK from other sequence data that may also be provided under a single NCBI id (e.g., in multi-gene sequences or genomic data).
+
+Use these NCBI ids to get accession numbers (which {AccessionBustR} uses to find sequence data)
+AccessionBust() parses sequence data itself to only return matK.
+
+FUTURE DIRECTION: explore web scraping with {httr} or {rvest} to locate matK tags in sequence data directly on the NCBI webpage, in lieu of using {rentrez} to pull NCBI ids & then converting these into accession numbers & finding sequence data
+
+###NOTES about AccessionBust():
+END RESULT: one fasta file per species (where a species may have multiple sequences) created in your working directory
+
+Took 3326.263 seconds on my machine -> almost an hour
+
+Prints error messages if cannot interpret a given accession number, but carries on with the search (known issues: KU258023 Aechmea_distichantha, KU258031 Aechmea_nudicaulis, NC_005086 Amborella_trichopoda, Accession NC_020318 Magnolia_grandiflora). All of these look fine on genbank; several are complete chloroplast genomes.
+
+```{r accSearch}
+#create a list of accession numbers for each species (create one list per species)
+#start by creating list names, which will contain the species name, gene, and accession number
+#first, pare down species names to just those for which matK data was available
+spNamesToKeep <- spNames[spToKeep]
+
+#create names for accession lists
+accessionNames <- paste(spNamesToKeep,"matK", "accession", sep="_" )
+
+
+system.time(
+for(i in 1:length(accessionNames)){
+  #make a separate list for each sp
+  assign(accessionNames[i], lapply(matK_seqIDs_toKeep[[i]], FUN=function(x){
+  entrez_summary(db="nuccore", id=x)$caption #gets 'caption', aka accession number
+    }) #end of lapply
+  ) #end of assign
+} #end of for loop
+)#end of system time
+
+
+#as a check, look at one list of accession numbers (the 1st sp).
+Aechmea_organensis_matK_accession
+#It worked, yielding a list of (2/2 expected) accession numbers.
+
+#automate the printing of variable names, so I can call them in sequence
+#'get' returns the value of a named object
+#to check, look at the list of accession numbers for the first sp (should match output above):
+get(accessionNames[1]) #yes, this returns the content of the 1st sp accession list
+
+#Before searching for sequences using the accession numbers, refine search terms that AnnotationBust will use
+#load in canned search terms for chloroplast sequences (matK is a chloroplast gene), from {AnnotationBustR} package
+data(cpDNAterms)
+
+#refine, by just looking for CDS type sequences (vs. tRNA, rRNA, or misc_RNA)
+cds.terms <- cpDNAterms[cpDNAterms$Type=="CDS",] 
+cds.terms
+#this includes many different chloroplast loci
+#locus 'matK' is associated with two names (synonyms) here:matK, maturase 
+
+#add another possible synonym, maturaseK
+add.name <- data.frame("matK", "CDS", "maturaseK") #make the data match the cds.terms table format
+colnames(add.name) <- colnames(cpDNAterms)
+new.cds.terms <- MergeSearchTerms(add.name, cpDNAterms, SortGenes=F)
+
+#pare search terms down to just matK
+matK.terms <- new.cds.terms[new.cds.terms$Locus=="matK",]
+matK.terms
+
+#pass a vector of accession numbers and these refined search terms to AnnotationBust, to get sequence data for accessions containing matK  
+#AnnotationBust will create a fasta file of all the sequence data in your working directory
+system.time(
+lapply(accessionNames, FUN=function(x){
+  #get a vector of accession numbers for each species from the lists created earlier
+  acc.tmp <- unlist(get(x))
+  splitNames <- unlist(strsplit(unlist(x), "\\_"))
+  spPrefix <- namePaste(splitNames)         
+  #extract just species name from accession name, to append to fasta file created below (the function automatically adds matK.fasta to the file name) 
+  
+  #send those to AnnotationBust, with the refined search terms           
+  AnnotationBust(acc.tmp, matK.terms, DuplicateSpecies=T, Prefix=spPrefix) #Duplicate sp arg adds accession labels to sp names, in case there are multiple sequences from the same species. Prefix adds the species name to the fasta file, so that each new species doesn't write over the file created for the species before
+})#end of lapply
+)#end of system time
+```
+
+Read in the fasta files and retain just the longest, most complete matK sequence for each species. Then, align the sequences.
+```{r longestSeq}
+#create a vector of the .fasta file names of the sequences
+mySeqFilenames <- c(paste(spNamesToKeep, "matK.fasta", sep="_"))
+
+#read the fasta files in
+DNAstringList <- lapply(mySeqFilenames, function(x) readDNAStringSet(x))
+#NOTE - this has relabelled Wittrockia_superba as Canistrum_superbum, upon reading in!
+
+#this automatically counts the length of each seq, filed under 'DNAstringList@ranges@width'
+#retain only the max width (sequence length) for each species
+#DNAstringList[[1]]@ranges@width #EXAMPLE, works for 1st sp
+
+longestSeqs <- lapply(DNAstringList, FUN=function(x){
+  #if there are ties for longest sequence, take the first sequence returned and its width [1]
+  x[x@ranges@width == max(x@ranges@width)][1]
+})
+
+#FUTURE DIRECTION: write code to kick out species that have a longest sequence < some threshold, based on the expected bp of the target sequence (matK)
+
+#collapse this list into one DNA string set
+seqStack <- do.call(c, unlist(longestSeqs, recursive=FALSE))
+
+
+#align sequences
+#note the default costs provided for opening and extending gaps in sequences, for aligning. FUTURE DIRECTION: explore the consequences on the alignment of changing these costs
+#verbose = T displays the progress (more useful for larger numbers of sequences)
+alignment <- AlignSeqs(seqStack, verbose=T)
+class(alignment) #this is a DNA string set format
+
+#save alignment as a .fasta file, written to your working directory
+writeXStringSet(alignment, file="plantMatKalignment.fasta")
+
+#visualize the alignment, in brief
+alignment
+
+
+#read in the alignment using {Biostrings} & convert it to a multiple alignment format, recognized by {msa}, to export a nicer looking pdf of the alignment to your working directory, indicating how conserved different regions are
+
+alignmentMA <- readDNAMultipleAlignment("plantMatKalignment.fasta")
+msaPrettyPrint(alignmentMA, output="pdf", showNames="left", 
+               showLogo="none", askForOverwrite=FALSE, 
+               verbose=FALSE, showConsensus = "none")
+
+#FUTURE DIRECTION: if needed based on msaPrettyPrint output, eliminate regions that were poorly conserved (since these regions might not be homologous between sequences, so don't add to phylogenetic signal, or are too diverged to align well). Option to adapt code from:http://a-little-book-of-r-for-bioinformatics.readthedocs.io/en/latest/src/chapter5.html
+```
+
+Using the sequence alignment, build a tree
+```{r treeBuild}
+#code adapted from http://www.molecularecologist.com/2016/02/quick-and-dirty-tree-building-in-r/ and {phangorn} vignette
+
+#read in the alignment, converting it to phyDat format
+alignPhyDat <- read.phyDat("plantMatKalignment.fasta", format="fasta", type="DNA")
+
+#calculate a distance matrix among the sequences
+#using a simple Jukes-Cantor model of evolution (Jukes & Cantor 1969), which assumes base pairs are equally common, all substitutions are equally probable, and that this probability does not change across sites. 
+phyDist <- dist.ml(alignPhyDat, model="JC69")
+
+#make a simple neighbour-joining tree, in {ape}
+plantTree <- nj(phyDist)
+
+#calculate the likelihood of the tree, in {phangorn}
+fit <- pml(plantTree, data=alignPhyDat)
+#note - there were negative branch lengths that have been changed to 0. Something must not be ideal in the model of evolution, perhaps.
+
+#given a model of evolution, optimize by assessing different tree topologies and branch lengths
+#'stochastic' is to help ensure you're not just sampling local minima
+fitOpt <- optim.pml(fit, optNni=T, model = "JC", rearrangement = "stochastic")
+
+#strip accession numbers and species variant names from tip labels, to tidy up display & so tip.labels will match with network dataset labels, used later
+splitTipNames <- strsplit(as.character(fitOpt$tree$tip.label), "_")
+fitOpt$tree$tip.label <- lapply(splitTipNames, function(x) namePaste(x))
+
+#relabel Canistrum_superbum back as Wittrockia_superba, so it will match the plant name in all the Vizentin-Bugoni data files
+fitOpt$tree$tip.label[fitOpt$tree$tip.label == "Canistrum_superbum"] <- "Wittrockia_superba"
+
+##root the tree, in {ape} (if you root before using optim.pml function, it unroots it anyway)
+outgroupSp <- c("Magnolia_grandiflora", "Amborella_trichopoda")
+rootedTree <- root(fitOpt$tree, outgroup = outgroupSp, resolve.root = T)
+
+plot(rootedTree, main="matK neighbour-joining phylogeny of a subset
+     of focal plant species studied by Vizentin-Bugoni et al. 2016
+     (Magnolia and Amborella as outgroups)")
+
+#save the tree (Newick format)
+write.tree(rootedTree, file="plantMatKphylo_rooted.tre")
+```
+
+Look at tree, resolve 0 branch lengths
+```{r branches}
+#the phylogenetic tree just generated is of class 'phylo'
+class(rootedTree)
+
+#check branch lengths
+rootedTree$edge.length
+#some branches have 0 length & need to be resolved. A quick solution is by randomly adding tiny branch lengths (here, pulled from an exponential distribution)
+set.seed(57) #so the same random branch lengths are generated next run
+
+rootedTree$edge.length <- rootedTree$edge.length + rexp(length(rootedTree$edge.length), 1/1e-4)
+plot(rootedTree, use.edge.length = F, main="matK neighbour-joining phylogeny of a subset
+     of focal plant species studied by Vizentin-Bugoni et al. 2016
+     (Magnolia and Amborella as outgroups, edge lengths not shown)")
+
+#save this tree as well (Newick format)
+write.tree(rootedTree, file="plantMatKphylo_rooted_randomEdgeAdded.tre")
+```
+
+# Calculate niche breadth of hummingbirds using 3 metrics: 
+phylogenetic diversity, richness, and Simpson's diversity
+
+Begin by using the tree to calculate niche breadth of hummingbird species as _phylogenetic diversity_ of plants visited
+```{r PD}
+#NOTE - uncomment the line below if you wish to just read in the provided tree
+#rootedTree <- read.tree("plantMatKphylo_rooted_randomEdgeAdded.tre")
+
+#For each hummingbird species, use the network data to determine which plant species it visited (i.e., convert interaction data to presence/absence). Then calculate PD of those plant species.
+
+#look at the network data
+network #the last row is all NA. Remove this row.
+network <- network[-nrow(network),]
+
+#update abbreviated plant names in network data to match species names (and tree tip.label)
+#first, see if they're alphabetized
+#how does 'identical' work? Is it order sensitive?
+identical(c(4,5),c(5,4)) #EXAMPLE - shows identical is sensitive to order
+
+network$X
+identical(network[order(network$X),], network) #yes, these are alphabetical
+
+#make the vector of complete species names (not including outgroup names that were used in the tree) also alphabetical
+identical(order(plantNamesAbund$GenusSp), plantNamesAbund$GenusSp) #not alphabetical
+spFocalSorted <- plantNamesAbund$GenusSp[order(plantNamesAbund$GenusSp)]
+#this is now a vector of names, organized alphabetically, only containing focal plant species
+
+identical(length(spFocalSorted), length(network$X)) #checked - the vector of plant names (abbreviated) in the network data and the vector of (full) sp names are the same length (and now both alphabetized, so we can sub-in the full names into the network dataset)
+
+network2 <- cbind(spFocalSorted, network) #now, full names are col 1 (abbreviations are col 2)
+network2 #double check names are matched
+network2$spFocalSorted <- as.character(network2$spFocalSorted) #turn factor into characters
+
+#subset the network data to include ONLY the plant species represented in the phylogenetic tree
+treeTipLabels <- unlist(rootedTree$tip.label) #to make sure it'll be an exact match to the tree sp labels
+
+#determine which names in the network overlap with the tree label names (will omit outgroups & focal species for which no sequences were found)
+networkSub <- network2[match(treeTipLabels, network2$spFocalSorted),] #matches, but creates rows of NAs (the methods of subsetting using subset, %in%, etc did not seem to work)
+
+#remove NAs. Now we have a network dataframe of just the plant species in the phylogenetic tree
+networkSub <- networkSub[complete.cases(networkSub),]
+networkSub
+
+#make species labels into row labels instead
+row.names(networkSub) <- networkSub[,1]
+#delete duplicate plant name columns, so all remaining columns are interaction data
+networkSub <- networkSub[,-c(1:2)]
+
+#calculate phylogenetic diversity (as Faith's Phylogenetic Diversity, with {picante}) of plants for each focal bird sp
+#chosen because, unlike mean pairwise distance, it returns a PD value even for bird sp with very few plants
+#it expects a community matrix with communities as rows -> transpose the network data so it will calculate PD for birds (rows)
+birdNB <- pd(t(networkSub), rootedTree, include.root = T)
+birdNB
+#NOTE, this also returns richness (the number of plant sp with which a bird sp interacts)
+```
+
+Calculate Simpson's diversity as an additional estimate of bird niche breadth (it captures both evenness and richness.
+```{r simp}
+#with {vegan}
+birdNB$Simpson <- diversity(networkSub, index = "simpson", MARGIN = 2)
+birdNB
+```
+
+For a simple visualization of the similarity of different niche breadth measures, create plots and calculate correlations.
+```{r plotNB}
+plot(birdNB$PD, birdNB$SR, xlab="Plant Phylogenetic Diversity (Faith's PD)", 
+     ylab="Plant Species Richness (SR)", main="Two measures of hummingbird interaction niche breadth
+     (PD and SR of plant species)")
+text(0.35, 25, labels="Spearman's rho = 0.94
+     p<0.05", cex=0.8)
+
+plot(birdNB$PD, birdNB$Simpson, xlab="Plant Phylogenetic Diversity (Faith's PD)", 
+     ylab="Plant Simpson's Diversity", main="Two measures of hummingbird interaction niche breadth
+     (PD and Simpson's Diversity of plant species)")
+text(0.35, 0.85, labels="Spearman's rho = 0.94
+     p<0.05", cex=0.8)
+
+plot(birdNB$SR, birdNB$Simpson, xlab="Plant Species Richness (SR)", 
+     ylab="Plant Simpson's Diversity", main="Two measures of hummingbird interaction niche breadth
+     (SR and Simpson's Diversity of plant species)")
+text(5.5, 0.85, labels="Spearman's rho = 1
+     p<0.05", cex=0.8)
+
+corMat <- rcorr(as.matrix(birdNB), type="spearman")
+corMat
+```
