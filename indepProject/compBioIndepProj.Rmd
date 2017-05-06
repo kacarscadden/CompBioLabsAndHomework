@@ -46,13 +46,13 @@ library(Hmisc) #for correlation test on a matrix
 ```
 
 
-Read in all of the data files from Vizentin-Bugoni et al. 2016.
+Read in the relevant data files from Vizentin-Bugoni et al. 2016 (network.csv and plantNamesAbund.csv).
 ```{r prep}
 #Set your working directory by modifying the code below
 #Make sure the data files are all in this directory AND that they are the ONLY .csv files there
 #setwd("/Users/kellycarscadden/Documents/EBIOcourses/compBio/indepProj_VizentinBugoni2016")
 
-#make a list of all 7 .csv data files
+#make a list of all .csv data files (so the code can be adapted for datasets with more .csv files)
 temp <- list.files(pattern = "*.csv")
 
 #read them in as separate data frames, removing .csv from the filename 
