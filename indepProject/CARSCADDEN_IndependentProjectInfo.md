@@ -55,11 +55,14 @@ I anticipated parsing and subsetting would be major components of this assignmen
 
 ## Results and conclusions from my analyses
 
-I constructed a phylogenetic tree of plant species from Vizentin-Bugoni et al. 2016 based on matK (a chloroplast gene). Ultimately 27 of 55 focal species (plus 2 outgroup species, for a total of 29 plant species) were included in the tree. The remainder lacked matK data. In future, I aim to incorporate other genes to add further species and make the relationships in the tree more robust. This is a simple tree that suffices for my purposes of assessing interaction breadth.
+I constructed a phylogenetic tree of plant species from Vizentin-Bugoni et al. 2016 based on matK (a chloroplast gene). Ultimately 27 of 55 focal species (plus 2 outgroup species, for a total of 29 plant species) were included in the tree. The remainder lacked matK data. In future, I aim to incorporate other genes to add further species and make the relationships in the tree more robust. This is a simple tree that suffices for my purposes of assessing interaction breadth. Note, multiple trees are plotted in the provided script (pictured here is after polytomies have been resolved).
 
-![](https://github.com/kacarscadden/CompBioLabsAndHomework/blob/master/indepProject/PD_SR.jpeg)
+![Figure 1](https://github.com/kacarscadden/CompBioLabsAndHomework/blob/master/indepProject/plantMatKphylo_rooted_noEdgeLen.jpeg)
 
+There was reasonable variation among the focal hummingbird species in their interaction breadth, regardless of the method used to estimate interaction breadth. The three measures (Species Richness, Simpson's Diversity, and Faith's Phylogenetic Diversity) yielded highly correlated estimates of interaction breadth (all Spearman's rho > 0.9, all p<0.05; Figs. 2-4). A caution: with 9 focal hummingbird species, the sample size is small (the points in the plots that follow represent the bird species). These results suggest these different measures of interaction niche breadth are redundant in the species studied and that phylogenetic diversity of the resources does not fundamentally change a focal species' niche breadth estimate. I believe other measures of niche breadth (e.g., those considering the background availability of resources) may be more distinct from the three investigated here, since they estimate niche breadth as a species' choosiness.
 
-There was reasonable variation among the focal hummingbird species in their interaction breadth, regardless of the method used to estimate interaction breadth. The three measures (Species Richness, Simpson's Diversity, and Faith's Phylogenetic Diversity) yielded highly correlated estimates of interaction breadth (all Spearman's rho > 0.9, all p<0.05). A caution: with 9 focal hummingbird species, the sample size is small. These results suggest these different measures of interaction niche breadth are redundant in the species studied and that phylogenetic diversity of the resources does not fundamentally change a focal species' niche breadth estimate. I believe other measures of niche breadth (e.g., those considering the background availability of resources) may be more distinct from the three investigated here, since they estimate niche breadth as a species' choosiness.
+![Figure 2](https://github.com/kacarscadden/CompBioLabsAndHomework/blob/master/indepProject/PD_SR.jpeg)
 
-[ADD IN PLOTS]
+![Figure 3](https://github.com/kacarscadden/CompBioLabsAndHomework/blob/master/indepProject/PD_Simpson.jpeg)
+
+![Figure 4](https://github.com/kacarscadden/CompBioLabsAndHomework/blob/master/indepProject/SR_Simpson.jpeg)
